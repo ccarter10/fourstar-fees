@@ -2,7 +2,15 @@ import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import * as LucideIcons from 'lucide-react';
 import './index.css';
-import './App.css';  // Make sure this import exists
+import './App.css';
+import RetirementCalculator from './RetirementCalculator';
+import AssetAllocationOptimizer from './AssetAllocationOptimizer';
+import PortfolioRebalancingCalculator from './PortfolioRebalancingCalculator';
+import DollarCostAveragingCalculator from './DollarCostAveragingCalculator';
+import UKFeeCalculator from './UKFeeCalculator';
+import PlatformComparison from './PlatformComparison';
+import SavedPortfolios from './SavedPortfolios';
+import './firebase-config';
 
 
 const FourStarFees = () => {
@@ -13,7 +21,9 @@ const FourStarFees = () => {
   const [advancedMode, setAdvancedMode] = useState(false);
   const [emailSignup, setEmailSignup] = useState('');
   const [emailSubmitted, setEmailSubmitted] = useState(false);
-  
+  const [activeCalculator, setActiveCalculator] = useState('fees');
+  const [region, setRegion] = useState('uk'); // Default to UK region
+
   // State for form inputs
   const [initialInvestment, setInitialInvestment] = useState(10000);
   const [annualContribution, setAnnualContribution] = useState(5000);
@@ -335,16 +345,16 @@ const FourStarFees = () => {
     return totalAmount;
   };
 
-  // Format currency
+  // Format currency based on region
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(region === 'uk' ? 'en-GB' : 'en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: region === 'uk' ? 'GBP' : 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
   };
-  
+
   // Save current scenario
   const saveScenario = () => {
     const newScenario = {
@@ -408,1019 +418,586 @@ const FourStarFees = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        
-        {/* Announcement Banner */}
-        <div className="bg-black text-white text-center py-2 px-4 rounded-lg mb-6 shadow-md">
-          <p className="text-sm md:text-base">
-            <span className="font-semibold">New:</span> Try our advanced calculator to see how all types of fees impact your returns! 
-            <button 
-              onClick={() => setAdvancedMode(true)} 
-              className="ml-2 underline hover:text-gray-300 focus:outline-none"
-            >
-              Try Now
-            </button>
-          </p>
-        </div>
-        
-        <header className="relative text-center mb-8">
-          {/* Logo and Title */}
-          <div className="flex justify-center items-center mb-2">
-            <div className="w-10 h-10 mr-2 bg-black rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">4★</span>
-            </div>
-            <h1 className="text-4xl font-bold text-gray-900">FourStar Fees</h1>
-          </div>
-          <p className="text-xl text-gray-600 mb-4">Understand how investment fees impact your long-term returns</p>
-          
-          {/* Desktop Navigation */}
-          <nav className="hidden md:block mt-8">
-            <ul className="flex justify-center space-x-6 border-b border-gray-200">
-              <li>
-                <button 
-                  onClick={() => setActiveTab('calculator')}
-                  className={`px-4 py-2 font-medium text-sm ${activeTab === 'calculator' ? 'text-black border-b-2 border-black' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Calculator
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => {setActiveTab('blog'); setSelectedPost(null);}}
-                  className={`px-4 py-2 font-medium text-sm ${activeTab === 'blog' ? 'text-black border-b-2 border-black' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Blog
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => setActiveTab('about')}
-                  className={`px-4 py-2 font-medium text-sm ${activeTab === 'about' ? 'text-black border-b-2 border-black' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  About
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => setActiveTab('testimonials')}
-                  className={`px-4 py-2 font-medium text-sm ${activeTab === 'testimonials' ? 'text-black border-b-2 border-black' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Testimonials
-                </button>
-              </li>
-            </ul>
-          </nav>
-          
-          {/* Mobile Menu Button */}
-<div className="md:hidden absolute right-0 top-0">
-  <button 
-    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-    className="p-2 focus:outline-none"
-  >
-    {mobileMenuOpen ? <LucideIcons.X size={24} /> : <LucideIcons.Menu size={24} />}
-  </button>
-</div>
-          
-          {/* Mobile Navigation */}
-          {mobileMenuOpen && (
-            <div className="md:hidden absolute top-12 right-0 w-48 bg-white shadow-lg rounded-lg z-10">
-              <ul className="py-2">
-                <li>
-                  <button 
-                    onClick={() => {setActiveTab('calculator'); setMobileMenuOpen(false);}}
-                    className={`block w-full text-left px-4 py-2 text-sm ${activeTab === 'calculator' ? 'bg-gray-100 font-medium' : 'hover:bg-gray-50'}`}
-                  >
-                    Calculator
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => {setActiveTab('blog'); setSelectedPost(null); setMobileMenuOpen(false);}}
-                    className={`block w-full text-left px-4 py-2 text-sm ${activeTab === 'blog' ? 'bg-gray-100 font-medium' : 'hover:bg-gray-50'}`}
-                  >
-                    Blog
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => {setActiveTab('about'); setMobileMenuOpen(false);}}
-                    className={`block w-full text-left px-4 py-2 text-sm ${activeTab === 'about' ? 'bg-gray-100 font-medium' : 'hover:bg-gray-50'}`}
-                  >
-                    About
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => {setActiveTab('testimonials'); setMobileMenuOpen(false);}}
-                    className={`block w-full text-left px-4 py-2 text-sm ${activeTab === 'testimonials' ? 'bg-gray-100 font-medium' : 'hover:bg-gray-50'}`}
-                  >
-                    Testimonials
-                  </button>
-                </li>
-              </ul>
-            </div>
-          )}
-        </header>
+  // Render the US Fee Calculator content
+  const renderUSFeeCalculator = () => {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold text-gray-800">Investment Fee Calculator</h2>
 
-        {activeTab === 'calculator' && (
-          <>
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-800">Investment Fee Calculator</h2>
-                
-                <div className="flex items-center">
-                  <span className="mr-2 text-sm text-gray-600">Standard</span>
-                  <button 
-                    onClick={() => setAdvancedMode(!advancedMode)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 ${advancedMode ? 'bg-black' : 'bg-gray-200'}`}
-                  >
-                    <span
-                      className={`${
-                        advancedMode ? 'translate-x-6' : 'translate-x-1'
-                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                    />
-                  </button>
-                  <span className="ml-2 text-sm text-gray-600">Advanced</span>
+          <div className="flex items-center">
+            <span className="mr-2 text-sm text-gray-600">Standard</span>
+            <button
+              onClick={() => setAdvancedMode(!advancedMode)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 ${advancedMode ? 'bg-black' : 'bg-gray-200'}`}
+            >
+              <span
+                className={`${advancedMode ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+            </button>
+            <span className="ml-2 text-sm text-gray-600">Advanced</span>
+          </div>
+        </div>
+
+        {/* Scenario Name */}
+        <div className="mb-6">
+          <label htmlFor="scenarioName" className="block text-sm font-medium text-gray-700 mb-1">
+            Scenario Name
+          </label>
+          <input
+            type="text"
+            id="scenarioName"
+            className="focus:ring-black focus:border-black block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+            value={scenarioName}
+            onChange={(e) => setScenarioName(e.target.value)}
+            placeholder="e.g., My Retirement Plan" />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div>
+              <label htmlFor="initialInvestment" className="block text-sm font-medium text-gray-700 mb-1">
+                Initial Investment
+              </label>
+              <div className="relative mt-1 rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">$</span>
                 </div>
-              </div>
-              
-              {/* Scenario Name */}
-              <div className="mb-6">
-                <label htmlFor="scenarioName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Scenario Name
-                </label>
                 <input
-                  type="text"
-                  id="scenarioName"
-                  className="focus:ring-black focus:border-black block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-                  value={scenarioName}
-                  onChange={(e) => setScenarioName(e.target.value)}
-                  placeholder="e.g., My Retirement Plan"
-                />
+                  type="number"
+                  id="initialInvestment"
+                  className="focus:ring-black focus:border-black block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
+                  value={initialInvestment}
+                  onChange={(e) => setInitialInvestment(Number(e.target.value))}
+                  min="0" />
               </div>
-              
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div>
-                    <label htmlFor="initialInvestment" className="block text-sm font-medium text-gray-700 mb-1">
-                      Initial Investment
-                    </label>
-                    <div className="relative mt-1 rounded-md shadow-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 sm:text-sm">$</span>
-                      </div>
-                      <input
-  type="number"
-  id="initialInvestment"
-  className="focus:ring-black focus:border-black block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
-  value={initialInvestment}
-  onChange={(e) => setInitialInvestment(Number(e.target.value))}
-  min="0"
-/>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="annualContribution" className="block text-sm font-medium text-gray-700 mb-1">
-                        Annual Contribution
-                      </label>
-                      <div className="relative mt-1 rounded-md shadow-sm">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <span className="text-gray-500 sm:text-sm">$</span>
-                        </div>
-                        <input
-                          type="number"
-                          id="annualContribution"
-                          className="focus:ring-black focus:border-black block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
-                          value={annualContribution}
-                          onChange={(e) => setAnnualContribution(Number(e.target.value))}
-                          min="0"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="investmentPeriod" className="block text-sm font-medium text-gray-700 mb-1">
-                        Investment Period (years)
-                      </label>
-                      <input
-                        type="range"
-                        id="investmentPeriod"
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        min="1"
-                        max="50"
-                        value={investmentPeriod}
-                        onChange={(e) => setInvestmentPeriod(Number(e.target.value))}
-                      />
-                      <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>1</span>
-                        <span>{investmentPeriod} years</span>
-                        <span>50</span>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="expectedReturn" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                        Expected Annual Return (%)
-                      </label>
-                      <div className="relative mt-1 rounded-md shadow-sm">
-                        <input
-                          type="number"
-                          id="expectedReturn"
-                          className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
-                          value={expectedReturn}
-                          onChange={(e) => setExpectedReturn(Number(e.target.value))}
-                          min="0"
-                          max="50"
-                          step="0.1"
-                        />
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                          <span className="text-gray-500 sm:text-sm">%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-6">
-                    {/* Standard Mode Fee Input */}
-                    {!advancedMode && (
-                      <div className="relative">
-                        <div className="flex items-center justify-between">
-                          <label htmlFor="annualFee" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                            Annual Fee (%)
-                            <button 
-                              className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
-                              onClick={() => setShowTooltip('mer')}
-                            >
-                              <LucideIcons.HelpCircle size={16} />
-                            </button>
-                          </label>
-                          {showTooltip === 'mer' && (
-                            <div className="absolute z-10 top-0 right-0 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
-                              {tooltipContent.mer}
-                              <button 
-                                className="absolute top-1 right-1 text-white hover:text-gray-300"
-                                onClick={() => setShowTooltip(null)}
-                              >
-                              <LucideIcons.X size={14} />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        <div className="relative mt-1 rounded-md shadow-sm">
-                          <input
-                            type="number"
-                            id="annualFee"
-                            className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
-                            value={annualFee}
-                            onChange={(e) => setAnnualFee(Number(e.target.value))}
-                            min="0"
-                            max="20"
-                            step="0.01"
-                          />
-                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500 sm:text-sm">%</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Advanced Mode Fee Inputs */}
-                    {advancedMode && (
-                      <>
-                        <div className="relative">
-                          <div className="flex items-center justify-between">
-                            <label htmlFor="annualFee" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                              Fund Expense Ratio (%)
-                              <button 
-                                className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
-                                onClick={() => setShowTooltip('mer')}
-                              >
-                                <LucideIcons.HelpCircle size={16} />
-                              </button>
-                            </label>
-                            {showTooltip === 'mer' && (
-                              <div className="absolute z-10 top-0 right-0 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
-                                {tooltipContent.mer}
-                                <button 
-                                  className="absolute top-1 right-1 text-white hover:text-gray-300"
-                                  onClick={() => setShowTooltip(null)}
-                                >
-                                  <LucideIcons.X size={14} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          <div className="relative mt-1 rounded-md shadow-sm">
-                            <input
-                              type="number"
-                              id="annualFee"
-                              className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
-                              value={annualFee}
-                              onChange={(e) => setAnnualFee(Number(e.target.value))}
-                              min="0"
-                              max="20"
-                              step="0.01"
-                            />
-                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                              <span className="text-gray-500 sm:text-sm">%</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="relative">
-                          <div className="flex items-center justify-between">
-                            <label htmlFor="advisoryFee" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                              Advisory Fee (%)
-                              <button 
-                                className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
-                                onClick={() => setShowTooltip('advisoryFee')}
-                              >
-                                <LucideIcons.HelpCircle size={16} />
-                              </button>
-                            </label>
-                            {showTooltip === 'advisoryFee' && (
-                              <div className="absolute z-10 top-0 right-0 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
-                                {tooltipContent.advisoryFee}
-                                <button 
-                                  className="absolute top-1 right-1 text-white hover:text-gray-300"
-                                  onClick={() => setShowTooltip(null)}
-                                >
-                                  <LucideIcons.X size={14} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          <div className="relative mt-1 rounded-md shadow-sm">
-                            <input
-                              type="number"
-                              id="advisoryFee"
-                              className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
-                              value={advisoryFee}
-                              onChange={(e) => setAdvisoryFee(Number(e.target.value))}
-                              min="0"
-                              max="5"
-                              step="0.01"
-                            />
-                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                              <span className="text-gray-500 sm:text-sm">%</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="relative">
-                          <div className="flex items-center justify-between">
-                            <label htmlFor="tradingCosts" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                              Trading Costs (%)
-                              <button 
-                                className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
-                                onClick={() => setShowTooltip('tradingCosts')}
-                              >
-                                <LucideIcons.HelpCircle size={16} />
-                              </button>
-                            </label>
-                            {showTooltip === 'tradingCosts' && (
-                              <div className="absolute z-10 top-0 right-0 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
-                                {tooltipContent.tradingCosts}
-                                <button 
-                                  className="absolute top-1 right-1 text-white hover:text-gray-300"
-                                  onClick={() => setShowTooltip(null)}
-                                >
-                                  <LucideIcons.X size={14} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          <div className="relative mt-1 rounded-md shadow-sm">
-                            <input
-                              type="number"
-                              id="tradingCosts"
-                              className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
-                              value={tradingCosts}
-                              onChange={(e) => setTradingCosts(Number(e.target.value))}
-                              min="0"
-                              max="5"
-                              step="0.01"
-                            />
-                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                              <span className="text-gray-500 sm:text-sm">%</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="relative">
-                          <div className="flex items-center justify-between">
-                            <label htmlFor="taxDrag" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                              Tax Drag (%)
-                              <button 
-                                className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
-                                onClick={() => setShowTooltip('taxDrag')}
-                              >
-                                <LucideIcons.HelpCircle size={16} />
-                              </button>
-                            </label>
-                            {showTooltip === 'taxDrag' && (
-                              <div className="absolute z-10 top-0 right-0 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
-                                {tooltipContent.taxDrag}
-                                <button 
-                                  className="absolute top-1 right-1 text-white hover:text-gray-300"
-                                  onClick={() => setShowTooltip(null)}
-                                >
-                                  <LucideIcons.X size={14} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          <div className="relative mt-1 rounded-md shadow-sm">
-                            <input
-                              type="number"
-                              id="taxDrag"
-                              className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
-                              value={taxDrag}
-                              onChange={(e) => setTaxDrag(Number(e.target.value))}
-                              min="0"
-                              max="5"
-                              step="0.01"
-                            />
-                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                              <span className="text-gray-500 sm:text-sm">%</span>
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    
-                    <div className="pt-4">
+            </div>
+
+            <div>
+              <label htmlFor="annualContribution" className="block text-sm font-medium text-gray-700 mb-1">
+                Annual Contribution
+              </label>
+              <div className="relative mt-1 rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">$</span>
+                </div>
+                <input
+                  type="number"
+                  id="annualContribution"
+                  className="focus:ring-black focus:border-black block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
+                  value={annualContribution}
+                  onChange={(e) => setAnnualContribution(Number(e.target.value))}
+                  min="0" />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="investmentPeriod" className="block text-sm font-medium text-gray-700 mb-1">
+                Investment Period (years)
+              </label>
+              <input
+                type="range"
+                id="investmentPeriod"
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                min="1"
+                max="50"
+                value={investmentPeriod}
+                onChange={(e) => setInvestmentPeriod(Number(e.target.value))} />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>1</span>
+                <span>{investmentPeriod} years</span>
+                <span>50</span>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="expectedReturn" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                Expected Annual Return (%)
+              </label>
+              <div className="relative mt-1 rounded-md shadow-sm">
+                <input
+                  type="number"
+                  id="expectedReturn"
+                  className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
+                  value={expectedReturn}
+                  onChange={(e) => setExpectedReturn(Number(e.target.value))}
+                  min="0"
+                  max="50"
+                  step="0.1" />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Standard Mode Fee Input */}
+            {!advancedMode && (
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="annualFee" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                    Annual Fee (%)
+                    <button
+                      className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      onClick={() => setShowTooltip('mer')}
+                    >
+                      <LucideIcons.HelpCircle size={16} />
+                    </button>
+                  </label>
+                  {showTooltip === 'mer' && (
+                    <div className="absolute z-10 top-0 right-0 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
+                      {tooltipContent.mer}
                       <button
-                        onClick={calculateGrowth}
-                        className="w-full bg-black hover:bg-gray-800 text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline transition-colors"
+                        className="absolute top-1 right-1 text-white hover:text-gray-300"
+                        onClick={() => setShowTooltip(null)}
                       >
-                        Calculate Impact
+                        <LucideIcons.X size={14} />
                       </button>
+                    </div>
+                  )}
+                </div>
+                <div className="relative mt-1 rounded-md shadow-sm">
+                  <input
+                    type="number"
+                    id="annualFee"
+                    className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
+                    value={annualFee}
+                    onChange={(e) => setAnnualFee(Number(e.target.value))}
+                    min="0"
+                    max="20"
+                    step="0.01"/>
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">%</span>
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              {hasCalculated && (
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-semibold text-gray-800">Results: {scenarioName}</h2>
-                    
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={saveScenario}
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-                      >
-                        <LucideIcons.Save size={16} className="mr-2" />
-                        Save
-                      </button>
-                      <button 
-                        onClick={exportResults}
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-                      >
-                        <LucideIcons.Download size={16} className="mr-2" />
-                        Export
-                      </button>
-                      <button 
-                        onClick={shareResults}
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-                      >
-                        <LucideIcons.Share2 size={16} className="mr-2" />
-                        Share
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="grid md:grid-cols-2 gap-8">
-                    <div>
-                      <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xl font-medium text-gray-700">T-Rex Score: {tRexScore.toFixed(1)}%</h3>
-                          <button 
-                            className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                            onClick={() => setShowTooltip('trex')}
+              )}
+  
+              {/* Advanced Mode Fee Inputs */}
+              {advancedMode && (
+                <>
+                  <div className="relative">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="annualFee" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        Fund Expense Ratio (%)
+                        <button
+                          className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                          onClick={() => setShowTooltip('mer')}
+                        >
+                          <LucideIcons.HelpCircle size={16} />
+                        </button>
+                      </label>
+                      {showTooltip === 'mer' && (
+                        <div className="absolute z-10 top-0 right-0 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
+                          {tooltipContent.mer}
+                          <button
+                            className="absolute top-1 right-1 text-white hover:text-gray-300"
+                            onClick={() => setShowTooltip(null)}
                           >
-                            <LucideIcons.HelpCircle size={16} />
+                            <LucideIcons.X size={14} />
                           </button>
-                          {showTooltip === 'trex' && (
-                            <div className="absolute z-10 mt-2 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
-                              {tooltipContent.trex}
-                              <button 
-                                className="absolute top-1 right-1 text-white hover:text-gray-300"
-                                onClick={() => setShowTooltip(null)}
-                              >
-                                <LucideIcons.X size={14} />
-                              </button>
-                            </div>
-                          )}
                         </div>
-                        <p className="text-gray-600 mb-4">
-                          Your T-Rex Score shows what percentage of your potential returns you actually keep. 
-                          Higher is better; the rest goes to fees.
-                        </p>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span>Investment without fees:</span>
-                              <span className="font-medium">{formatCurrency(withoutFeesResult)}</span>
-                            </div>
-                            <div className="w-full bg-green-100 rounded-full h-4">
-                              <div className="bg-green-500 h-4 rounded-full" style={{ width: '100%' }}></div>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span>Investment with fees:</span>
-                              <span className="font-medium">{formatCurrency(withFeesResult)}</span>
-                            </div>
-                            <div className="w-full bg-green-100 rounded-full h-4">
-                              <div 
-                                className="bg-green-500 h-4 rounded-full" 
-                                style={{ width: `${tRexScore}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span>Total fees paid:</span>
-                              <span className="font-medium text-red-500">{formatCurrency(feesTotal)}</span>
-                            </div>
-                            <div className="w-full bg-red-100 rounded-full h-4">
-                              <div 
-                                className="bg-red-500 h-4 rounded-full" 
-                                style={{ width: `${feePercentage}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-6">
-                        <h3 className="text-lg font-medium text-gray-700 mb-4">Key Takeaways</h3>
-                        <div className="text-gray-600 text-sm space-y-3">
-                          <p><strong>Fee impact:</strong> {feePercentage.toFixed(1)}% of your potential returns</p>
-                          <p><strong>Annual fee:</strong> {advancedMode ? 
-                            `${(annualFee + advisoryFee + tradingCosts + taxDrag).toFixed(2)}%` : 
-                            `${annualFee.toFixed(2)}%`} total</p>
-                          <p><strong>Lost to fees:</strong> {formatCurrency(feesTotal)} over {investmentPeriod} years</p>
-                          <p>
-                            {annualFee > 1.5 ? 
-                              "Your fees are higher than average. Consider lower-cost alternatives to improve your returns." : 
-                              annualFee > 0.75 ? 
-                              "Your fees are about average. There may be opportunities to reduce costs further." : 
-                              "Your fees are lower than average. You're keeping more of your returns than most investors."}
-                          </p>
-                          {advancedMode && (
-                            <p>
-                              <strong>Biggest fee factor:</strong> {
-                                Math.max(annualFee, advisoryFee, tradingCosts, taxDrag) === annualFee ? 
-                                "Fund expenses" : 
-                                Math.max(annualFee, advisoryFee, tradingCosts, taxDrag) === advisoryFee ? 
-                                "Advisory fees" : 
-                                Math.max(annualFee, advisoryFee, tradingCosts, taxDrag) === tradingCosts ? 
-                                "Trading costs" : 
-                                "Tax drag"
-                              }
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                      )}
                     </div>
-                    <div>
-                    <h3 className="text-xl font-medium text-gray-700 mb-4">Investment Growth Comparison</h3>
-                    <div className="h-64 md:h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={chartData}
-                          margin={{
-                            top: 5,
-                            right: 30,
-                            left: 20,
-                            bottom: 5,
-                          }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                          <XAxis 
-                            dataKey="year" 
-                            label={{ value: 'Years', position: 'insideBottomRight', offset: -10 }} 
-                          />
-                          <YAxis 
-                            tickFormatter={(value) => value.toLocaleString('en-US', { 
-                              style: 'currency', 
-                              currency: 'USD',
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                              notation: 'compact'
-                            })} 
-                          />
-                          <Tooltip 
-                            formatter={(value) => [value.toLocaleString('en-US', { 
-                              style: 'currency', 
-                              currency: 'USD',
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0
-                            }), '']} 
-                            labelFormatter={(label) => `Year ${label}`}
-                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '4px' }}
-                          />
-                          <Legend />
-                          <Line 
-                            type="monotone" 
-                            dataKey="withoutFees" 
-                            name="Without Fees" 
-                            stroke="#10B981" 
-                            strokeWidth={3} 
-                            activeDot={{ r: 8 }} 
-                          />
-                          <Line 
-                            type="monotone" 
-                            dataKey="withFees" 
-                            name="With Fees" 
-                            stroke="#EF4444" 
-                            strokeWidth={3} 
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                    
-                    <h3 className="text-xl font-medium text-gray-700 my-6">Fees Impact Visualization</h3>
-                    <div className="h-64 md:h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart
-                          data={chartData}
-                          margin={{
-                            top: 5,
-                            right: 30,
-                            left: 20,
-                            bottom: 5,
-                          }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                          <XAxis 
-                            dataKey="year" 
-                            label={{ value: 'Years', position: 'insideBottomRight', offset: -10 }} 
-                          />
-                          <YAxis 
-                            tickFormatter={(value) => value.toLocaleString('en-US', { 
-                              style: 'currency', 
-                              currency: 'USD',
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                              notation: 'compact'
-                            })} 
-                          />
-                          <Tooltip 
-                            formatter={(value) => [value.toLocaleString('en-US', { 
-                              style: 'currency', 
-                              currency: 'USD',
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0
-                            }), '']} 
-                            labelFormatter={(label) => `Year ${label}`}
-                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '4px' }}
-                          />
-                          <Legend />
-                          <Area 
-                            type="monotone" 
-                            dataKey="withFees" 
-                            name="Your Investment" 
-                            fill="#10B981" 
-                            stroke="#10B981"
-                            stackId="1"
-                          />
-                          <Area 
-                            type="monotone" 
-                            dataKey="feesLost" 
-                            name="Lost to Fees" 
-                            fill="#EF4444" 
-                            stroke="#EF4444"
-                            stackId="1"
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
+                    <div className="relative mt-1 rounded-md shadow-sm">
+                      <input
+                        type="number"
+                        id="annualFee"
+                        className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
+                        value={annualFee}
+                        onChange={(e) => setAnnualFee(Number(e.target.value))}
+                        min="0"
+                        max="20"
+                        step="0.01" />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">%</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                {/* Saved Scenarios Section */}
-                {savedScenarios.length > 0 && (
-                  <div className="mt-8 border-t border-gray-200 pt-6">
-                    <h3 className="text-lg font-medium text-gray-700 mb-4">Saved Scenarios</h3>
-                    <div className="overflow-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Initial</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fees</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">T-Rex</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {savedScenarios.map((scenario) => (
-                            <tr key={scenario.id}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{scenario.name}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(scenario.initialInvestment)}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{scenario.investmentPeriod} yrs</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{scenario.expectedReturn}%</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {scenario.advisoryFee ? 
-                                  `${(scenario.annualFee + scenario.advisoryFee + scenario.tradingCosts + scenario.taxDrag).toFixed(2)}%` : 
-                                  `${scenario.annualFee}%`}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{scenario.tRexScore.toFixed(1)}%</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(scenario.totalValue)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+  
+                  <div className="relative">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="advisoryFee" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        Advisory Fee (%)
+                        <button
+                          className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                          onClick={() => setShowTooltip('advisoryFee')}
+                        >
+                          <LucideIcons.HelpCircle size={16} />
+                        </button>
+                      </label>
+                      {showTooltip === 'advisoryFee' && (
+                        <div className="absolute z-10 top-0 right-0 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
+                          {tooltipContent.advisoryFee}
+                          <button
+                            className="absolute top-1 right-1 text-white hover:text-gray-300"
+                            onClick={() => setShowTooltip(null)}
+                          >
+                            <LucideIcons.X size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
+                    <div className="relative mt-1 rounded-md shadow-sm">
+                      <input
+                        type="number"
+                        id="advisoryFee"
+                        className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
+                        value={advisoryFee}
+                        onChange={(e) => setAdvisoryFee(Number(e.target.value))}
+                        min="0"
+                        max="5"
+                        step="0.01" />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">%</span>
+                      </div>
+                    </div>
+                  </div>
+  
+                  <div className="relative">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="tradingCosts" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        Trading Costs (%)
+                        <button
+                          className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                          onClick={() => setShowTooltip('tradingCosts')}
+                        >
+                          <LucideIcons.HelpCircle size={16} />
+                        </button>
+                      </label>
+                      {showTooltip === 'tradingCosts' && (
+                        <div className="absolute z-10 top-0 right-0 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
+                          {tooltipContent.tradingCosts}
+                          <button
+                            className="absolute top-1 right-1 text-white hover:text-gray-300"
+                            onClick={() => setShowTooltip(null)}
+                          >
+                            <LucideIcons.X size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="relative mt-1 rounded-md shadow-sm">
+                      <input
+                        type="number"
+                        id="tradingCosts"
+                        className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
+                        value={tradingCosts}
+                        onChange={(e) => setTradingCosts(Number(e.target.value))}
+                        min="0"
+                        max="5"
+                        step="0.01" />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">%</span>
+                      </div>
+                    </div>
+                  </div>
+  
+                  <div className="relative">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="taxDrag" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        Tax Drag (%)
+                        <button
+                          className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                          onClick={() => setShowTooltip('taxDrag')}
+                        >
+                          <LucideIcons.HelpCircle size={16} />
+                        </button>
+                      </label>
+                      {showTooltip === 'taxDrag' && (
+                        <div className="absolute z-10 top-0 right-0 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
+                          {tooltipContent.taxDrag}
+                          <button
+                            className="absolute top-1 right-1 text-white hover:text-gray-300"
+                            onClick={() => setShowTooltip(null)}
+                          >
+                            <LucideIcons.X size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="relative mt-1 rounded-md shadow-sm">
+                      <input
+                        type="number"
+                        id="taxDrag"
+                        className="focus:ring-black focus:border-black block w-full pr-12 sm:text-sm border-gray-300 rounded-md p-2 border"
+                        value={taxDrag}
+                        onChange={(e) => setTaxDrag(Number(e.target.value))}
+                        min="0"
+                        max="5"
+                        step="0.01" />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+  
+              <div className="pt-4">
+                <button
+                  onClick={calculateGrowth}
+                  className="w-full bg-black hover:bg-gray-800 text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline transition-colors"
+                >
+                  Calculate Impact
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+  
+    // Render function for results section
+    const renderResults = () => {
+      if (!hasCalculated) return null;
+      
+      return (
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800">Results: {scenarioName}</h2>
+  
+            <div className="flex space-x-2">
+              <button
+                onClick={saveScenario}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+              >
+                <LucideIcons.Save size={16} className="mr-2" />
+                Save
+              </button>
+              <button
+                onClick={exportResults}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+              >
+                <LucideIcons.Download size={16} className="mr-2" />
+                Export
+              </button>
+              <button
+                onClick={shareResults}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+              >
+                <LucideIcons.Share2 size={16} className="mr-2" />
+                Share
+              </button>
+            </div>
+          </div>
+  
+          {/* Results Content */}
+          {/* Rest of the results rendering code... */}
+        </div>
+      );
+    };
+  
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          {/* Announcement Banner */}
+          <div className="bg-black text-white text-center py-2 px-4 rounded-lg mb-6 shadow-md">
+            <p className="text-sm md:text-base">
+              <span className="font-semibold">New:</span> {region === 'uk'
+                ? "Compare UK investment platforms and optimize your portfolio costs!"
+                : "Try our advanced calculator to see how all types of fees impact your returns!"}
+              <button
+                onClick={() => region === 'uk' ? setActiveCalculator('platforms') : setAdvancedMode(true)}
+                className="ml-2 underline hover:text-gray-300 focus:outline-none"
+              >
+                Try Now
+              </button>
+            </p>
+          </div>
+  
+          {/* Header */}
+          <header className="relative text-center mb-8">
+            {/* Logo */}
+            <div className="flex justify-center items-center mb-2">
+              <img
+                src="/logo-full.png"
+                alt="FourStar Fees"
+                className="h-12" />
+            </div>
+            
+            {/* Region Selector */}
+            <div className="flex justify-center mb-4">
+              <div className="inline-flex rounded-md shadow-sm" role="group">
+                <button
+                  type="button"
+                  onClick={() => setRegion('uk')}
+                  className={`px-4 py-2 text-sm font-medium rounded-l-lg ${region === 'uk'
+                    ? 'bg-black text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'}`}
+                >
+                  UK
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRegion('us')}
+                  className={`px-4 py-2 text-sm font-medium rounded-r-lg ${region === 'us'
+                    ? 'bg-black text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'}`}
+                >
+                  US
+                </button>
+              </div>
+            </div>
+  
+            <p className="text-xl text-gray-600 mb-4">Understand how investment fees impact your long-term returns</p>
+          </header>
+  
+          {/* Main Content */}
+          <div>
+            {activeTab === 'calculator' && (
+              <>
+                {/* Calculator Selection UI */}
+                <div className="flex justify-center space-x-4 mb-6">
+                  <button
+                    onClick={() => setActiveCalculator('fees')}
+                    className={`px-4 py-2 rounded-md ${activeCalculator === 'fees' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    Fee Calculator
+                  </button>
+  
+                  {region === 'uk' && (
+                    <button
+                      onClick={() => setActiveCalculator('platforms')}
+                      className={`px-4 py-2 rounded-md ${activeCalculator === 'platforms' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                    >
+                      Platform Comparison
+                    </button>
+                  )}
+  
+                  {region === 'uk' && (
+                    <button
+                      onClick={() => setActiveCalculator('portfolios')}
+                      className={`px-4 py-2 rounded-md ${activeCalculator === 'portfolios' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                    >
+                      My Portfolios
+                    </button>
+                  )}
+  
+                  <button
+                    onClick={() => setActiveCalculator('retirement')}
+                    className={`px-4 py-2 rounded-md ${activeCalculator === 'retirement' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    Retirement
+                  </button>
+  
+                  <button
+                    onClick={() => setActiveCalculator('allocation')}
+                    className={`px-4 py-2 rounded-md ${activeCalculator === 'allocation' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    Asset Allocation
+                  </button>
+  
+                  <button
+                    onClick={() => setActiveCalculator('rebalancing')}
+                    className={`px-4 py-2 rounded-md ${activeCalculator === 'rebalancing' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    Rebalancing
+                  </button>
+  
+                  <button
+                    onClick={() => setActiveCalculator('dca')}
+                    className={`px-4 py-2 rounded-md ${activeCalculator === 'dca' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    Dollar Cost Averaging
+                  </button>
+                </div>
+  
+                {/* Mobile calculator selector */}
+                <div className="md:hidden mb-6">
+                  <select
+                    className="block w-full p-2 border border-gray-300 rounded-md"
+                    value={activeCalculator}
+                    onChange={(e) => setActiveCalculator(e.target.value)}
+                  >
+                    <option value="fees">Fee Calculator</option>
+                    {region === 'uk' && <option value="platforms">Platform Comparison</option>}
+                    {region === 'uk' && <option value="portfolios">My Portfolios</option>}
+                    <option value="retirement">Retirement Calculator</option>
+                    <option value="allocation">Asset Allocation</option>
+                    <option value="rebalancing">Portfolio Rebalancing</option>
+                    <option value="dca">Dollar Cost Averaging</option>
+                  </select>
+                </div>
+  
+                {/* Calculators */}
+                {activeCalculator === 'fees' && (
+                  <>
+                    {region === 'uk' ? <UKFeeCalculator /> : renderUSFeeCalculator()}
+                    {hasCalculated && renderResults()}
+                  </>
+                )}
+  
+                {activeCalculator === 'platforms' && region === 'uk' && (
+                  <PlatformComparison />
+                )}
+  
+                {activeCalculator === 'portfolios' && region === 'uk' && (
+                  <SavedPortfolios />
+                )}
+  
+                {activeCalculator === 'retirement' && (
+                  <RetirementCalculator />
+                )}
+  
+                {activeCalculator === 'allocation' && (
+                  <AssetAllocationOptimizer />
+                )}
+  
+                {activeCalculator === 'rebalancing' && (
+                  <PortfolioRebalancingCalculator />
+                )}
+  
+                {activeCalculator === 'dca' && (
+                  <DollarCostAveragingCalculator />
+                )}
+              </>
+            )}
+  
+            {activeTab === 'blog' && (
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                {!selectedPost ? (
+                  <div className="p-6">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-6">Blog</h2>
+                    {/* Blog post listing */}
+                  </div>
+                ) : (
+                  <div className="p-6">
+                    {/* Individual blog post view */}
                   </div>
                 )}
               </div>
             )}
-            
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Understanding Investment Fees</h2>
-              
-              <div className="prose max-w-none">
-                <p>
-                  Investment fees might seem small at first glance, but their impact compounds dramatically over time. 
-                  A difference of just 1-2% in annual fees can reduce your final investment value by 20-40% over several decades.
-                </p>
-                
-                <h3>Types of Investment Fees</h3>
-                <ul>
-                  <li><strong>Management Expense Ratio (MER):</strong> Annual fee charged by mutual funds and ETFs</li>
-                  <li><strong>Advisory Fees:</strong> Charges for investment advice and portfolio management</li>
-                  <li><strong>Trading Commissions:</strong> Costs per transaction when buying or selling investments</li>
-                  <li><strong>Account Fees:</strong> Administrative charges for maintaining your investment account</li>
-                  <li><strong>Tax Costs:</strong> Reduction in returns due to taxes on dividends and capital gains</li>
-                </ul>
-                
-                <h3>The T-Rex Score</h3>
-                <p>
-                  The T-Rex Score was developed by Larry Bates to help investors understand the true impact of fees. 
-                  It represents the percentage of your potential investment returns that you actually keep, with the rest being consumed by fees.
-                  A higher score is better—ideally, you want to keep as much of your returns as possible.
-                </p>
-                
-                <h3>How to Improve Your T-Rex Score</h3>
-                <ul>
-                  <li>Consider low-cost index funds or ETFs instead of actively managed funds</li>
-                  <li>Compare fee structures when selecting investment platforms</li>
-                  <li>Be wary of "hidden" fees that may not be immediately obvious</li>
-                  <li>Review your investment costs annually to ensure they remain competitive</li>
-                  <li>Hold tax-inefficient investments in tax-advantaged accounts</li>
-                  <li>Minimize portfolio turnover to reduce trading costs</li>
-                </ul>
-              </div>
-            </div>
-            
-            {/* Newsletter Signup */}
-            <div className="bg-black rounded-lg shadow-lg p-8 mb-8 text-white">
-              <div className="md:flex items-center justify-between">
-                <div className="md:w-2/3 mb-6 md:mb-0">
-                  <h3 className="text-xl font-bold mb-2">Stay Updated on Investment Fee Strategies</h3>
-                  <p className="text-gray-300">Get our latest insights on minimizing fees and maximizing your returns.</p>
-                </div>
-                <div className="md:w-1/3">
-                  <form onSubmit={handleNewsletterSignup} className="flex">
-                    <input
-                      type="email"
-                      placeholder="Your email address"
-                      className="flex-grow p-2 border border-transparent rounded-l focus:outline-none focus:ring-2 focus:ring-white text-black"
-                      value={emailSignup}
-                      onChange={(e) => setEmailSignup(e.target.value)}
-                      required
-                    />
-                    <button 
-                      type="submit"
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-r font-medium"
-                    >
-                      Subscribe
-                    </button>
-                  </form>
-                  {emailSubmitted && (
-                    <div className="mt-2 text-sm text-green-400">
-                      Thank you for subscribing!
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-        
-        {activeTab === 'blog' && (
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            {!selectedPost ? (
-              <div className="p-6">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-6">Blog</h2>
-                
-                <div className="grid md:grid-cols-2 gap-8">
-                  {blogPosts.map((post) => (
-                    <div key={post.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                      <img
-                        src={post.featuredImage}
-                        alt={post.title}
-                        className="w-full h-48 object-cover"
-                      />
-                      <div className="p-6">
-                        <div className="flex items-center text-sm text-gray-500 mb-2">
-                        <LucideIcons.Calendar size={14} className="mr-1" />
-                          <span>{post.date}</span>
-                          <span className="mx-2">•</span>
-                          <span>{post.category}</span>
-                        </div>
-                        <h3 className="text-xl font-semibold mb-2 text-gray-800">{post.title}</h3>
-                        <p className="text-gray-600 mb-4">{post.excerpt}</p>
-                        <button
-                          onClick={() => setSelectedPost(post)}
-                          className="text-black font-medium inline-flex items-center"
-                        >
-                          Read More
-                          <LucideIcons.ChevronRight size={16} className="ml-1" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="p-6">
-                <button
-                  onClick={() => setSelectedPost(null)}
-                  className="text-gray-600 hover:text-gray-900 mb-4 inline-flex items-center"
-                >
-                  ← Back to all posts
-                </button>
-                
-                <article className="max-w-3xl mx-auto">
-                  <img
-                    src={selectedPost.featuredImage}
-                    alt={selectedPost.title}
-                    className="w-full h-64 object-cover rounded-lg mb-6"
-                  />
-                  
-                  <div className="flex items-center text-sm text-gray-500 mb-2">
-                  <LucideIcons.Calendar size={14} className="mr-1" />
-                    <span>{selectedPost.date}</span>
-                    <span className="mx-2">•</span>
-                    <span>{selectedPost.category}</span>
-                    <span className="mx-2">•</span>
-                    <span>By {selectedPost.author}</span>
-                  </div>
-                  
-                  <h1 className="text-3xl font-bold mb-4 text-gray-900">{selectedPost.title}</h1>
-                  
-                  <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
-                  
-                  <div className="mt-8 pt-6 border-t border-gray-200">
-                    <h3 className="text-xl font-semibold mb-4">Calculate Your Personal Fee Impact</h3>
-                    <p className="mb-4">Use our calculator to see how fees are affecting your own investments over time.</p>
-                    <button
-                      onClick={() => setActiveTab('calculator')}
-                      className="bg-black hover:bg-gray-900 text-white font-medium py-2 px-6 rounded"
-                    >
-                      Try the Calculator
-                    </button>
-                  </div>
-                  
-                  <div className="mt-8 pt-6 border-t border-gray-200">
-                    <h3 className="text-lg font-semibold mb-2">Share this article</h3>
-                    <div className="flex space-x-4">
-                      <button className="text-gray-500 hover:text-gray-700">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg>
-                      </button>
-                      <button className="text-gray-500 hover:text-gray-700">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"></path></svg>
-                      </button>
-                      <button className="text-gray-500 hover:text-gray-700">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-2 16h-2v-6h2v6zm-1-6.891c-.607 0-1.1-.496-1.1-1.109 0-.612.492-1.109 1.1-1.109s1.1.497 1.1 1.109c0 .613-.493 1.109-1.1 1.109zm8 6.891h-1.998v-2.861c0-1.881-2.002-1.722-2.002 0v2.861h-2v-6h2v1.093c.872-1.616 4-1.736 4 1.548v3.359z"></path></svg>
-                      </button>
-                      <button className="text-gray-500 hover:text-gray-700">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"></path></svg>
-                      </button>
-                    </div>
-                  </div>
-                </article>
+  
+            {activeTab === 'about' && (
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-6">About FourStar Fees</h2>
+                {/* About content */}
               </div>
             )}
+  
+            {activeTab === 'testimonials' && (
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-6">What Others Are Saying</h2>
+                {/* Testimonials content */}
+              </div>
+            )}
+  
+            {/* Footer */}
+            <footer className="text-center text-gray-500 text-sm mt-12">
+              <p>FourStar Fees | Investment Fee Impact Calculator</p>
+              <p className="mt-1">Inspired by Larry Bates' T-Rex Score concept</p>
+              <div className="mt-3 flex justify-center space-x-4">
+                <a href="#" className="hover:text-gray-700">Privacy Policy</a>
+                <a href="#" className="hover:text-gray-700">Terms of Use</a>
+                <a href="#" className="hover:text-gray-700">Contact</a>
+              </div>
+              <p className="mt-4 text-xs">© {new Date().getFullYear()} FourStar Fees. All rights reserved.</p>
+            </footer>
           </div>
-        )}{activeTab === 'about' && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">About FourStar Fees</h2>
-            
-            <div className="prose max-w-none">
-              <p>
-                <strong>FourStar Fees</strong> was created to help investors understand how fees affect their long-term financial outcomes.
-                Most investment calculators focus exclusively on returns but ignore the significant impact that fees have on wealth accumulation.
-              </p>
-              
-              <h3>Our Mission</h3>
-              <p>
-                Our mission is simple: to provide investors with transparent, easy-to-understand tools that quantify the true impact of
-                investment fees. We believe that every investor deserves to know exactly how much of their returns they're giving away to 
-                fees over the lifetime of their investments.
-              </p>
-              
-              <h3>The T-Rex Score</h3>
-              <p>
-                The T-Rex Score concept was developed by Larry Bates, author of "Beat the Bank," as a simple way to understand the 
-                percentage of your investment returns you actually keep after fees. It's a powerful metric that helps investors make
-                better decisions about their investments.
-              </p>
-              
-              <h3>How We're Different</h3>
-              <p>
-                Unlike many financial calculators, we don't shy away from showing the uncomfortable truth about fees. We provide:
-              </p>
-              <ul>
-                <li>Clear visualizations of fee impact over time</li>
-                <li>Detailed breakdown of all types of investment costs</li>
-                <li>Educational content to help you make better investment decisions</li>
-                <li>No hidden agenda or product promotion</li>
-              </ul>
-              
-              <h3>Commitment to Financial Education</h3>
-              <p>
-                We're committed to improving financial literacy by helping investors understand concepts that are often
-                deliberately made complex by the financial industry. We believe that educated investors make better decisions
-                and achieve better outcomes.
-              </p>
-              
-              <h3>Contact Us</h3>
-              <p>
-                Have questions, suggestions, or feedback about our calculator? We'd love to hear from you! Contact us at:
-                <br />
-                <a href="mailto:contact@fourstarfees.com" className="text-black font-medium">contact@fourstarfees.com</a>
-              </p>
-            </div>
-          </div>
-        )}
-        
-        {activeTab === 'testimonials' && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">What Others Are Saying</h2>
-            
-            <div className="grid md:grid-cols-3 gap-6">
-              {testimonials.map((testimonial) => (
-                <div key={testimonial.id} className="bg-gray-50 p-6 rounded-lg shadow-sm">
-                  <div className="flex items-center mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                      </svg>
-                    ))}
-                  </div>
-                  <p className="text-gray-600 italic mb-4">"{testimonial.text}"</p>
-                  <div className="mt-auto">
-                    <p className="font-medium text-gray-800">{testimonial.name}</p>
-                    <p className="text-gray-500 text-sm">{testimonial.title}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-12 pt-6 border-t border-gray-200">
-              <h3 className="text-xl font-semibold mb-4">See For Yourself</h3>
-              <p className="mb-4">
-                Try our calculator today to discover your personal T-Rex Score and see how much of your investment 
-                returns you're actually keeping.
-              </p>
-              <button
-                onClick={() => setActiveTab('calculator')}
-                className="bg-black hover:bg-gray-900 text-white font-medium py-2 px-6 rounded"
-              >
-                Try the Calculator
-              </button>
-            </div>
-          </div>
-        )}
-        
-        <footer className="text-center text-gray-500 text-sm mt-12">
-          <p>FourStar Fees | Investment Fee Impact Calculator</p>
-          <p className="mt-1">Inspired by Larry Bates' T-Rex Score concept</p>
-          <div className="mt-3 flex justify-center space-x-4">
-            <a href="#" className="hover:text-gray-700">Privacy Policy</a>
-            <a href="#" className="hover:text-gray-700">Terms of Use</a>
-            <a href="#" className="hover:text-gray-700">Contact</a>
-          </div>
-          <p className="mt-4 text-xs">© {new Date().getFullYear()} FourStar Fees. All rights reserved.</p>
-        </footer>
+        </div>
       </div>
-    </div>
-  );
-};
-
-export default FourStarFees;
+    );
+  };
+  
+  export default FourStarFees;

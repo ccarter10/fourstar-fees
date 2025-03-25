@@ -1,0 +1,35 @@
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "FourStar Fees Calculator",
+  "url": "https://fourstarfees.com",
+  "description": "An interactive calculator that helps investors understand how investment fees impact long-term returns using the T-Rex Score method.",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "All",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "creator": {
+    "@type": "Organization",
+    "name": "FourStar Fees",
+    "description": "Helping investors understand the true impact of investment fees on long-term returns",
+    "url": "https://fourstarfees.com"
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Investment Fee Impact",
+    "description": "Educational resource about how investment fees erode returns over time and how the T-Rex Score helps investors understand fee impact."
+  },
+  "keywords": "investment fees, T-Rex Score, fee calculator, investment returns, expense ratio, advisory fees, investment costs, retirement planning, investment growth",
+  "potentialAction": {
+    "@type": "UseAction",
+    "target": "https://fourstarfees.com/calculator"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "name": "Investment Fee Calculator",
+    "@id": "https://fourstarfees.com"
+  }
+}
