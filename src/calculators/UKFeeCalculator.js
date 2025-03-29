@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import * as LucideIcons from 'lucide-react';
 
@@ -13,6 +13,14 @@ const UKFeeCalculator = () => {
   const [tradingCosts, setTradingCosts] = useState(0.1);
   const [advancedMode, setAdvancedMode] = useState(false);
   const [showTooltip, setShowTooltip] = useState(null);
+  
+  // UK Specific settings
+  const [accountType, setAccountType] = useState('ISA');
+  const [isaAllowance, setIsaAllowance] = useState(20000); // Annual ISA allowance
+  const [includeCapitalGainsTax, setIncludeCapitalGainsTax] = useState(false);
+  const [includeDividendTax, setIncludeDividendTax] = useState(false);
+  const [taxBracket, setTaxBracket] = useState('basic'); // basic, higher, additional
+  const [usePersonalAllowance, setUsePersonalAllowance] = useState(true);
   
   // Selected platform preset
   const [selectedPlatform, setSelectedPlatform] = useState(null);
@@ -40,12 +48,30 @@ const UKFeeCalculator = () => {
   const [hasCalculated, setHasCalculated] = useState(false);
   const [scenarioName, setScenarioName] = useState('My UK Investment');
   const [savedScenarios, setSavedScenarios] = useState([]);
+  
+  // Tax rates based on UK tax brackets (2025 estimates)
+  const taxRates = {
+    basic: { dividendTax: 8.75, capitalGainsTax: 10 },
+    higher: { dividendTax: 33.75, capitalGainsTax: 20 },
+    additional: { dividendTax: 39.35, capitalGainsTax: 20 }
+  };
+  
+  // Tax allowances
+  const [capitalGainsAllowance, setCapitalGainsAllowance] = useState(6000); // 2025 estimate
+  const [dividendAllowance, setDividendAllowance] = useState(500); // 2025 estimate
+  const [personalAllowance, setPersonalAllowance] = useState(12570); // 2025 estimate
 
   // Tooltip content
   const tooltipContent = {
     platformFee: "Platform fees are charged by the investment platform for administering your account. These are typically a percentage of your investments, sometimes with a cap.",
     fundFee: "Fund fees (also called OCF - Ongoing Charge Figure) cover the cost of the fund manager picking and managing the investments in the fund.",
     tradingCosts: "Trading costs include dealing charges when buying or selling shares/funds and forex charges for overseas investments.",
+    accountType: "Different account types have different tax treatment in the UK. ISAs offer tax-free growth and withdrawals, SIPPs provide tax relief on contributions, and GIAs are subject to capital gains and dividend taxes.",
+    isaAllowance: "The maximum amount you can contribute to ISAs in a tax year. For 2024/25, this is £20,000.",
+    capitalGainsTax: "Tax on profits when you sell investments for more than you paid for them. Not applicable for ISAs or SIPPs.",
+    dividendTax: "Tax on dividend income from investments. Not applicable for ISAs or SIPPs.",
+    taxBracket: "Your income tax bracket affects the rate of tax you pay on dividends and capital gains.",
+    personalAllowance: "The amount of income you can earn each year without paying income tax.",
     trex: "The T-Rex Score, developed by Larry Bates, shows what percentage of your potential returns you keep after fees. Higher is better!"
   };
 
@@ -53,30 +79,65 @@ const UKFeeCalculator = () => {
   const applyPlatformPreset = (platform) => {
     setPlatformFee(platform.platformFee);
     setFundFee(platform.fundFee);
-    setTradingCosts(platform.tradingCosts / 100); // Convert fixed trading costs to percentage
+    if (platform.tradingCosts > 0) {
+      // Convert fixed trading costs to approximate percentage impact
+      const estimatedTradingCostsPercentage = (platform.tradingCosts * 12) / initialInvestment * 100;
+      setTradingCosts(Math.min(estimatedTradingCostsPercentage, 0.5)); // Cap at 0.5% for reasonability
+    } else {
+      setTradingCosts(0);
+    }
     setSelectedPlatform(platform.name);
   };
 
   // Calculate investment growth
   const calculateGrowth = () => {
     // Calculate total fee percentage
-    let totalFeePercentage = 0;
+    let totalFeePercentage = platformFee + fundFee + tradingCosts;
     
-    if (advancedMode) {
-      totalFeePercentage = platformFee + fundFee + tradingCosts;
-    } else {
-      // In simple mode, use the selected platform's fees or default to platform + fund fee
-      const selectedPreset = platformPresets.find(p => p.name === selectedPlatform);
-      if (selectedPreset) {
-        totalFeePercentage = selectedPreset.platformFee + selectedPreset.fundFee;
-        if (selectedPreset.tradingCosts > 0) {
-          // Approximate percentage impact of fixed trading costs based on portfolio size and trading frequency
-          totalFeePercentage += 0.1; // Simplified estimate
-        }
-      } else {
-        totalFeePercentage = platformFee + fundFee;
+    // Tax drag calculations for GIA accounts
+    let taxDrag = 0;
+    
+    if (accountType === 'GIA') {
+      // For GIA accounts, calculate tax drag
+      if (includeDividendTax) {
+        // Assume 2.5% dividend yield
+        const dividendYield = 2.5;
+        const annualDividend = initialInvestment * (dividendYield / 100);
+        
+        // Apply dividend allowance
+        let taxableDividend = annualDividend - dividendAllowance;
+        taxableDividend = Math.max(0, taxableDividend);
+        
+        // Calculate dividend tax
+        const dividendTaxRate = taxRates[taxBracket].dividendTax / 100;
+        const dividendTaxAmount = taxableDividend * dividendTaxRate;
+        
+        // Convert to percentage of portfolio
+        const dividendTaxDrag = (dividendTaxAmount / initialInvestment) * 100;
+        taxDrag += dividendTaxDrag;
+      }
+      
+      if (includeCapitalGainsTax) {
+        // Simplified capital gains tax calculation
+        // Assume annual realization of gains equal to the expected return
+        const annualGain = initialInvestment * (expectedReturn / 100);
+        
+        // Apply capital gains allowance
+        let taxableGain = annualGain - capitalGainsAllowance;
+        taxableGain = Math.max(0, taxableGain);
+        
+        // Calculate capital gains tax
+        const cgtRate = taxRates[taxBracket].capitalGainsTax / 100;
+        const cgtAmount = taxableGain * cgtRate;
+        
+        // Convert to percentage of portfolio
+        const cgtDrag = (cgtAmount / initialInvestment) * 100;
+        taxDrag += cgtDrag;
       }
     }
+    
+    // Add tax drag to total fee percentage
+    totalFeePercentage += taxDrag;
     
     const withoutFees = calculateInvestmentGrowth(initialInvestment, annualContribution, investmentPeriod, expectedReturn, 0);
     const withFees = calculateInvestmentGrowth(initialInvestment, annualContribution, investmentPeriod, expectedReturn, totalFeePercentage);
@@ -118,11 +179,18 @@ const UKFeeCalculator = () => {
     let totalAmount = initial;
     
     for (let i = 0; i < years; i++) {
-      totalAmount = totalAmount * (1 + effectiveReturn) + annual;
+      // Limit annual contribution to ISA allowance if applicable
+      let yearlyContribution = annual;
+      if (accountType === 'ISA') {
+        yearlyContribution = Math.min(annual, isaAllowance);
+      }
+      
+      totalAmount = totalAmount * (1 + effectiveReturn) + yearlyContribution;
     }
     
     return totalAmount;
   };
+  
   // Format currency (GBP)
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-GB', {
@@ -138,6 +206,7 @@ const UKFeeCalculator = () => {
     const newScenario = {
       id: Date.now(),
       name: scenarioName,
+      accountType,
       initialInvestment,
       annualContribution,
       investmentPeriod,
@@ -145,6 +214,9 @@ const UKFeeCalculator = () => {
       platformFee,
       fundFee,
       tradingCosts,
+      taxBracket: accountType === 'GIA' ? taxBracket : null,
+      includeDividendTax: accountType === 'GIA' ? includeDividendTax : false,
+      includeCapitalGainsTax: accountType === 'GIA' ? includeCapitalGainsTax : false,
       tRexScore,
       totalValue: withFeesResult,
       feesTotal
@@ -164,6 +236,11 @@ const UKFeeCalculator = () => {
     // In a real implementation, this would use the Web Share API
     alert("Share feature would allow you to send these results via email or social media");
   };
+
+  // Effect to update scenario name when account type changes
+  useEffect(() => {
+    setScenarioName(`My UK ${accountType} Investment`);
+  }, [accountType]);
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
@@ -201,44 +278,98 @@ const UKFeeCalculator = () => {
         />
       </div>
       
-      {/* Platform Presets - Only show in simple mode */}
-      {!advancedMode && (
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Investment Platform
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {platformPresets.map((platform) => (
-              <button
-                key={platform.name}
-                onClick={() => applyPlatformPreset(platform)}
-                className={`p-2 text-sm border rounded-md ${
-                  selectedPlatform === platform.name
-                    ? 'border-black bg-gray-100'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                {platform.name}
-              </button>
-            ))}
+      {/* UK Account Type Selector */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+          Account Type
+          <button 
+            className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+            onClick={() => setShowTooltip('accountType')}
+          >
+            <LucideIcons.HelpCircle size={16} />
+          </button>
+        </label>
+        {showTooltip === 'accountType' && (
+          <div className="absolute z-10 mt-2 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
+            {tooltipContent.accountType}
+            <button 
+              className="absolute top-1 right-1 text-white hover:text-gray-300"
+              onClick={() => setShowTooltip(null)}
+            >
+              <LucideIcons.X size={14} />
+            </button>
+          </div>
+        )}
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={() => setAccountType('ISA')}
+            className={`p-2 text-sm border rounded-md ${
+              accountType === 'ISA'
+                ? 'border-black bg-gray-100'
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            ISA
+          </button>
+          <button
+            onClick={() => setAccountType('SIPP')}
+            className={`p-2 text-sm border rounded-md ${
+              accountType === 'SIPP'
+                ? 'border-black bg-gray-100'
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            SIPP (Pension)
+          </button>
+          <button
+            onClick={() => setAccountType('GIA')}
+            className={`p-2 text-sm border rounded-md ${
+              accountType === 'GIA'
+                ? 'border-black bg-gray-100'
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            General Account
+          </button>
+        </div>
+      </div>
+      
+      {/* Platform Presets */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Select Investment Platform
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {platformPresets.map((platform) => (
             <button
-              onClick={() => {
-                setPlatformFee(0.25);
-                setFundFee(0.22);
-                setTradingCosts(0);
-                setSelectedPlatform(null);
-              }}
+              key={platform.name}
+              onClick={() => applyPlatformPreset(platform)}
               className={`p-2 text-sm border rounded-md ${
-                selectedPlatform === null
+                selectedPlatform === platform.name
                   ? 'border-black bg-gray-100'
                   : 'border-gray-300 hover:border-gray-400'
               }`}
             >
-              Custom
+              {platform.name}
             </button>
-          </div>
+          ))}
+          <button
+            onClick={() => {
+              setPlatformFee(0.25);
+              setFundFee(0.22);
+              setTradingCosts(0);
+              setSelectedPlatform(null);
+            }}
+            className={`p-2 text-sm border rounded-md ${
+              selectedPlatform === null
+                ? 'border-black bg-gray-100'
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            Custom
+          </button>
         </div>
-      )}
+      </div>
       
       <div className="grid md:grid-cols-2 gap-8">
         <div className="space-y-6">
@@ -261,7 +392,6 @@ const UKFeeCalculator = () => {
               />
             </div>
           </div>
-          
           <div>
             <label htmlFor="annualContribution" className="block text-sm font-medium text-gray-700 mb-1">
               Annual Contribution
@@ -280,6 +410,11 @@ const UKFeeCalculator = () => {
                 step="100"
               />
             </div>
+            {accountType === 'ISA' && (
+              <p className="mt-1 text-xs text-gray-500">
+                ISA annual allowance: {formatCurrency(isaAllowance)}
+              </p>
+            )}
           </div>
           
           <div>
@@ -322,6 +457,130 @@ const UKFeeCalculator = () => {
               </div>
             </div>
           </div>
+          
+          {/* GIA-specific tax settings */}
+          {accountType === 'GIA' && advancedMode && (
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-md font-medium text-gray-700 mb-3">Tax Settings</h3>
+              
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="taxBracket" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                    Tax Bracket
+                    <button 
+                      className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      onClick={() => setShowTooltip('taxBracket')}
+                    >
+                      <LucideIcons.HelpCircle size={16} />
+                    </button>
+                  </label>
+                  {showTooltip === 'taxBracket' && (
+                    <div className="absolute z-10 mt-2 w-64 p-3 bg-gray-800 text-white text-xs rounded shadow-lg">
+                      {tooltipContent.taxBracket}
+                      <button 
+                        className="absolute top-1 right-1 text-white hover:text-gray-300"
+                        onClick={() => setShowTooltip(null)}
+                      >
+                        <LucideIcons.X size={14} />
+                      </button>
+                    </div>
+                  )}
+                  <select
+                    id="taxBracket"
+                    className="focus:ring-black focus:border-black block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                    value={taxBracket}
+                    onChange={(e) => setTaxBracket(e.target.value)}
+                  >
+                    <option value="basic">Basic Rate (20%)</option>
+                    <option value="higher">Higher Rate (40%)</option>
+                    <option value="additional">Additional Rate (45%)</option>
+                  </select>
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    id="includeDividendTax"
+                    type="checkbox"
+                    className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded"
+                    checked={includeDividendTax}
+                    onChange={(e) => setIncludeDividendTax(e.target.checked)}
+                  />
+                  <label htmlFor="includeDividendTax" className="ml-2 block text-sm text-gray-700 flex items-center">
+                    Include Dividend Tax
+                    <button 
+                      className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      onClick={() => setShowTooltip('dividendTax')}
+                    >
+                      <LucideIcons.HelpCircle size={16} />
+                    </button>
+                  </label>
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    id="includeCapitalGainsTax"
+                    type="checkbox"
+                    className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded"
+                    checked={includeCapitalGainsTax}
+                    onChange={(e) => setIncludeCapitalGainsTax(e.target.checked)}
+                  />
+                  <label htmlFor="includeCapitalGainsTax" className="ml-2 block text-sm text-gray-700 flex items-center">
+                    Include Capital Gains Tax
+                    <button 
+                      className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      onClick={() => setShowTooltip('capitalGainsTax')}
+                    >
+                      <LucideIcons.HelpCircle size={16} />
+                    </button>
+                  </label>
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    id="usePersonalAllowance"
+                    type="checkbox"
+                    className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded"
+                    checked={usePersonalAllowance}
+                    onChange={(e) => setUsePersonalAllowance(e.target.checked)}
+                  />
+                  <label htmlFor="usePersonalAllowance" className="ml-2 block text-sm text-gray-700 flex items-center">
+                    Use Personal Allowance
+                    <button 
+                      className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      onClick={() => setShowTooltip('personalAllowance')}
+                    >
+                      <LucideIcons.HelpCircle size={16} />
+                    </button>
+                  </label>
+                </div>
+                
+                <div className="pt-2 text-xs text-gray-500">
+                  <p>UK Tax Allowances (2025 estimates):</p>
+                  <ul className="list-disc pl-5 space-y-1 mt-1">
+                    <li>Capital Gains: {formatCurrency(capitalGainsAllowance)}</li>
+                    <li>Dividend: {formatCurrency(dividendAllowance)}</li>
+                    <li>Personal: {formatCurrency(personalAllowance)}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* SIPP-specific info */}
+          {accountType === 'SIPP' && (
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <LucideIcons.Info className="h-5 w-5 text-blue-500" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-blue-700">
+                    SIPP benefits include tax relief on contributions and tax-free growth, but you can't access funds until age 55 (rising to 57 by 2028).
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <div className="space-y-6">
           {/* Fee Inputs */}
@@ -358,7 +617,6 @@ const UKFeeCalculator = () => {
                 min="0"
                 max="2"
                 step="0.01"
-                disabled={!advancedMode && selectedPlatform !== null}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <span className="text-gray-500 sm:text-sm">%</span>
@@ -399,7 +657,6 @@ const UKFeeCalculator = () => {
                 min="0"
                 max="2"
                 step="0.01"
-                disabled={!advancedMode && selectedPlatform !== null}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <span className="text-gray-500 sm:text-sm">%</span>
@@ -448,6 +705,68 @@ const UKFeeCalculator = () => {
               </div>
             </div>
           )}
+          
+          {/* Account type benefits summary */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-md font-medium text-gray-700 mb-2">UK Account Type Benefits</h3>
+            
+            <div className="space-y-2 text-sm">
+              {accountType === 'ISA' && (
+                <>
+                  <p className="flex items-center">
+                    <LucideIcons.Check className="text-green-500 mr-2" size={16} />
+                    Tax-free growth and withdrawals
+                  </p>
+                  <p className="flex items-center">
+                    <LucideIcons.Check className="text-green-500 mr-2" size={16} />
+                    Annual allowance of {formatCurrency(isaAllowance)}
+                  </p>
+                  <p className="flex items-center">
+                    <LucideIcons.Check className="text-green-500 mr-2" size={16} />
+                    Flexible access at any time
+                  </p>
+                </>
+              )}
+              
+              {accountType === 'SIPP' && (
+                <>
+                  <p className="flex items-center">
+                    <LucideIcons.Check className="text-green-500 mr-2" size={16} />
+                    Tax relief on contributions (20-45%)
+                  </p>
+                  <p className="flex items-center">
+                    <LucideIcons.Check className="text-green-500 mr-2" size={16} />
+                    Tax-free growth within the pension
+                  </p>
+                  <p className="flex items-center">
+                    <LucideIcons.Check className="text-green-500 mr-2" size={16} />
+                    25% tax-free lump sum at retirement
+                  </p>
+                  <p className="flex items-center">
+                    <LucideIcons.Minus className="text-red-500 mr-2" size={16} />
+                    Cannot access until age 55 (57 by 2028)
+                  </p>
+                </>
+              )}
+              
+              {accountType === 'GIA' && (
+                <>
+                  <p className="flex items-center">
+                    <LucideIcons.Check className="text-green-500 mr-2" size={16} />
+                    No contribution limits
+                  </p>
+                  <p className="flex items-center">
+                    <LucideIcons.Check className="text-green-500 mr-2" size={16} />
+                    Complete flexibility and access
+                  </p>
+                  <p className="flex items-start">
+                    <LucideIcons.Minus className="text-red-500 mr-2 mt-1" size={16} />
+                    <span>Subject to Capital Gains Tax ({taxRates[taxBracket].capitalGainsTax}%) and Dividend Tax ({taxRates[taxBracket].dividendTax}%)</span>
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
           
           <div className="pt-4">
             <button
@@ -569,6 +888,7 @@ const UKFeeCalculator = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investment</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Fees</th>
@@ -580,6 +900,7 @@ const UKFeeCalculator = () => {
                     {savedScenarios.map((scenario) => (
                       <tr key={scenario.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{scenario.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{scenario.accountType}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(scenario.initialInvestment)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{scenario.investmentPeriod} years</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(scenario.feesTotal)}</td>
@@ -592,6 +913,53 @@ const UKFeeCalculator = () => {
               </div>
             </div>
           )}
+          
+          {/* UK-specific tax benefits info */}
+          <div className="mt-8 bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-700 mb-4">UK Tax-Efficient Investing</h3>
+            
+            <div className="space-y-4">
+              <p>
+                Making the most of UK tax wrappers can significantly improve your long-term investment returns:
+              </p>
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="font-medium text-gray-800 mb-2">ISA (Individual Savings Account)</h4>
+                  <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
+                    <li>Annual allowance: {formatCurrency(isaAllowance)}</li>
+                    <li>Tax-free growth and withdrawals</li>
+                    <li>Flexible access at any time</li>
+                    <li>No tax on dividends or capital gains</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="font-medium text-gray-800 mb-2">SIPP (Self-Invested Personal Pension)</h4>
+                  <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
+                    <li>Tax relief on contributions (20-45%)</li>
+                    <li>Tax-free growth</li>
+                    <li>25% tax-free lump sum at retirement</li>
+                    <li>Remaining withdrawals taxed as income</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="font-medium text-gray-800 mb-2">General Investment Account (GIA)</h4>
+                  <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
+                    <li>No contribution limits</li>
+                    <li>Annual CGT allowance: {formatCurrency(capitalGainsAllowance)}</li>
+                    <li>Annual dividend allowance: {formatCurrency(dividendAllowance)}</li>
+                    <li>Can use for investments exceeding ISA/SIPP limits</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-600">
+                <strong>Investment Strategy Tip:</strong> Consider using your ISA allowance first, then your pension allowance, and finally a GIA for additional investments. This approach maximizes your tax-efficient investing opportunities.
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>
